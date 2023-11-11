@@ -1,0 +1,67 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <div class="container">
+        <div class="row">
+            <div class=" col-4">
+                <input type="text" class="form-control" id="UserName" placeholder="User Name" />
+                <input type="text" class="form-control" id="Message" placeholder="Message" />
+                <button id="btnSendMessage" class ="btn btn-primary" type="button">Gönder</button>
+            </div>
+            <div class="col-8">
+                <ul class=" list-group" id="messages"></ul>
+            </div>
+        </div>
+    </div>
+  
+</div>
+@section Scripts{
+    <script>
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub")
+            .configureLogging(signalR.LogLevel.Information)
+            .build();
+
+        async function start() {
+            try {
+                await connection.start();
+                console.log("signalr connected.");
+            }
+            catch (err) {
+                console.error(error);
+                setTimeout(start,5000);
+            }
+        }
+
+        connection.onclose(async () => {
+            await start();
+        });
+
+        start();
+
+        $('#btnSendMessage').click(function () {
+            try {
+                var userName = $('#UserName').val();
+                var message = $('#Message').val();
+                connection.invoke("SendMessage", userName, message);
+            }
+            catch (error) {
+                console.error(error);
+            }
+        });
+
+        $().ready(function () {
+            connection.on("ReceiveMessage", (user, message) => {
+
+                console.log(user, message);
+                $('#messages').append(
+                    `<li class="list-group-item">${user}:${message}</li>`
+                );
+            });
+        });
+    </script>
+}
